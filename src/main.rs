@@ -6,6 +6,7 @@ mod token;
 mod lexer;
 mod ast;
 mod errors;
+mod parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
