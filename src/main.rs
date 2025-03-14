@@ -9,6 +9,8 @@ mod ast;
 mod errors;
 mod parser;
 
+const FILE_PATH: &'static str = "main.chao";
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -16,8 +18,9 @@ fn main() {
         if args.len() >= 2 {
             &args[1]
         } else {
-            eprintln!("File path was not specified...");
-            std::process::exit(1);
+            // eprintln!("File path was not specified...");
+            // std::process::exit(1);
+            &FILE_PATH.to_string()
         }
     };
 
@@ -42,4 +45,8 @@ fn main() {
     let token_stream = mem::replace(&mut lexer.output, Vec::new());
     let mut parser = Parser::new(token_stream);
     parser.parse();
+
+    for error in parser.errors {
+        error.print(&file, &path);
+    }
 }

@@ -87,15 +87,47 @@ impl Lexer {
 
                 // Arithmetic operators
                 '+' => self.token(token::Kind::Plus, start),
-                '-' => self.token(token::Kind::Minus, start),
                 '*' => self.token(token::Kind::Star, start),
                 '/' => self.token(token::Kind::Slash, start),
                 '%' => self.token(token::Kind::Modulo, start),
+
+                '-' => {
+                    match self.peek() {
+                        '>' => {
+                            self.cursor += 1;
+                            self.token(token::Kind::Arrow, start);
+                        }
+                        _ => self.token(token::Kind::Minus, start),
+                    }
+                }
+
+                // Miscellaneous symbols
+                ',' => self.token(token::Kind::Comma, start),
 
                 // '!' => self.push_if_next_else('=', start, Token::Kind::BangEqual, Token::Kind::Bang),
                 // '=' => self.push_if_next_else('=', start, Token::Kind::EqualEqual, Token::Kind::Equal),
 
                 // Literals
+                '"' => {
+                    'str_literal: while self.peek() != &'"' {
+                        if self.peek() == &'\0' {
+                            self.errors.push(
+                                CompilerError::new(
+                                    errors::Kind::UnterminatedLiteral,
+                                    errors::Flag::Abort,
+                                    self.line,
+                                    start,
+                                    self.stream.len() - start,
+                                    "this string literal has no ending '\"'"
+                                )
+                            );
+                            break 'str_literal;
+                        }
+                        self.cursor += 1;
+                    }
+                    self.token(token::Kind::String, start + 1);
+                }
+
                 'a'..='z' | 'A'..='Z' | '_' => {
                     while self.peek().is_alphanumeric() || self.peek() == &'_' {
                         self.cursor += 1;

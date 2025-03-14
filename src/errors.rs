@@ -70,6 +70,10 @@ impl CompilerError {
 
         // Decrement backwards to find the beginning of this line
         for (i, ch) in source.char_indices().rev() {
+            if i > self.offset {
+                continue;
+            }
+
             if ch == '\n' {
                 ln_start = i + 1;
                 break;
@@ -79,13 +83,13 @@ impl CompilerError {
         // Increment forwards to find the end of this line
         for (i, ch) in source.char_indices() {
             if ch == '\n' {
-                ln_end = i + 1;
+                ln_end = i - 1;
                 break;
             }
         }
 
-        if ln_start >= ln_end {
-            panic!("ERROR start >= end!");
+        if ln_start > ln_end {
+            panic!("ERROR start > end!");
         }
 
         let line = source[ln_start..=ln_end].to_string();

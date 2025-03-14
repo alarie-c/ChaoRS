@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Kind {
     LParen,
     RParen,
@@ -14,6 +14,7 @@ pub enum Kind {
     Modulo,
 
     Arrow,
+    Comma,
 
     Equal,
     EqualEqual,

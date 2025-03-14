@@ -61,7 +61,12 @@ pub enum Expr {
         span: Span,
         lhs: Box<Expr>,
         rhs: Box<Expr>,
-    }
+    },
+    FunctionCall {
+        span: Span,
+        callee: Box<Expr>,
+        arguments: Vec<Box<Expr>>,
+    },
 }
 
 #[derive(Debug)]
