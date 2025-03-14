@@ -87,6 +87,10 @@ pub enum Expr {
         span: Span,
         name: String,
     },
+    Grouping {
+        span: Span,
+        inner: Box<Expr>,
+    },
 
     // Expressions
     Binary {

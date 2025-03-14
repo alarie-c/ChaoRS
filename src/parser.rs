@@ -25,6 +25,14 @@ impl Parser {
         return self.stream.get(self.cursor + 1).unwrap_or(self.stream.last().unwrap());
     }
 
+    fn peek_newline_insensitive(&mut self) -> &Token {
+        if self.peek().kind == token::Kind::Newline {
+            self.cursor += 1;
+            return self.peek_newline_insensitive();
+        }
+        return self.stream.get(self.cursor + 1).unwrap_or(self.stream.last().unwrap());
+    }
+
     fn span(&self) -> (usize, usize, usize) {
         let t = self.current();
         (t.line, t.offset, t.offset + t.lexeme.len())
@@ -159,6 +167,26 @@ impl Parser {
                         "expected an expression after this but found EOF (end of file) instead."
                     )
                 );
+                span.valid = false;
+                return Expr::Empty { span };
+            }
+            token::Kind::LParen => {
+                self.cursor += 1;
+                let inner = self.assignment();
+                if self.peek_newline_insensitive().kind == token::Kind::RParen {
+                    return Expr::Grouping { span, inner: Box::new(inner) };
+                } else {
+                    self.errors.push(
+                        CompilerError::new(
+                            errors::Kind::SyntaxError,
+                            errors::Flag::Abort,
+                            line,
+                            start,
+                            stop - start,
+                            "mismatch parenthesis, expected ')' to close this grouping expression"
+                        )
+                    );
+                }
                 span.valid = false;
                 return Expr::Empty { span };
             }
