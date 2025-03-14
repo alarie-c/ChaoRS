@@ -1,17 +1,22 @@
+use std::fmt::Display;
+
+use crate::token;
+
 #[derive(Debug)]
 pub struct Span {
+    pub line: usize,
     pub start: usize,
     pub stop: usize,
     pub valid: bool,
 }
 
 impl Span {
-    pub fn new(start: usize, stop: usize) -> Self {
-        Self { start, stop, valid: true }
+    pub fn new(line: usize, start: usize, stop: usize) -> Self {
+        Self { line, start, stop, valid: true }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum AstOp {
     Plus,
     Minus,
@@ -19,6 +24,44 @@ pub enum AstOp {
     Divide,
     Modulus,
     Reassign,
+}
+
+impl AstOp {
+    pub fn from_token(token: &token::Kind) -> Option<Self> {
+        match token {
+            token::Kind::Plus => Some(AstOp::Plus),
+            token::Kind::Minus => Some(AstOp::Minus),
+            token::Kind::Star => Some(AstOp::Multiply),
+            token::Kind::Slash => Some(AstOp::Divide),
+            token::Kind::Modulo => Some(AstOp::Modulus),
+            token::Kind::Arrow => Some(AstOp::Reassign),
+            _ => None
+        }
+    }
+
+    pub fn precedence(&self) -> i8 {
+        match self {
+            AstOp::Reassign => -1,
+            AstOp::Plus => 0,
+            AstOp::Minus => 0,
+            AstOp::Multiply => 1,
+            AstOp::Divide => 1,
+            AstOp::Modulus => 1,
+        }
+    }
+}
+
+impl Display for AstOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AstOp::Plus => write!(f, "PLUS '+'"),
+            AstOp::Minus => write!(f, "MINUS '-'"),
+            AstOp::Multiply => write!(f, "MULTIPLY '*'"),
+            AstOp::Divide => write!(f, "DIVIDE '/'"),
+            AstOp::Modulus => write!(f, "MODULUS '%'"),
+            AstOp::Reassign => write!(f, "REASSIGN '->'"),
+        }
+    }
 }
 
 #[derive(Debug)]
