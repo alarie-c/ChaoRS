@@ -1,8 +1,8 @@
-use crate::{ ast::{ AstOp, Expr, Span }, errors::{ self, CompilerError }, token::{ self, Token } };
+use crate::{ ast::{ AstOp, Expr, Span, Stmt }, errors::{ self, CompilerError }, token::{ self, Token } };
 
 pub struct Parser {
     stream: Vec<Token>,
-    tree: Vec<Expr>,
+    tree: Vec<Stmt>,
     cursor: usize,
     pub errors: Vec<CompilerError>,
 }
@@ -275,9 +275,120 @@ impl Parser {
 
         return expression;
     }
+}
 
+impl Parser {
     pub fn parse(&mut self) {
-        let e = self.assignment();
-        dbg!(&e);
+        'statements: loop {
+            if self.current().kind == token::Kind::End {
+                break 'statements;
+            }
+            
+            let statement = self.statement();
+            self.tree.push(statement);
+            self.cursor += 1;
+        }
+
+        println!("{:#?}", self.tree);
+    }
+
+    fn binding(&mut self, token: Token, mutable: bool) -> Stmt {
+        self.cursor += 1; // consume EQUAL
+        let (line, start, stop) = self.span();
+        let span = Span::new(line, start, stop);
+
+        self.cursor += 1;
+        let value = self.assignment();
+        return Stmt::Binding { span, mutable, name: token.lexeme, initializer: Some(Box::new(value)), annotation: None };
+    }
+
+    fn end_statement(&mut self, statement: Stmt) -> Stmt {
+        match self.peek().kind {
+            token::Kind::Newline | token::Kind::Semicolon | token::Kind::End => statement,
+            _ => {
+                let (line, start, stop) = self.span();
+                let span = Span::new(line, start, stop);
+                self.errors.push(
+                    CompilerError::new(
+                        errors::Kind::SyntaxError,
+                        errors::Flag::Abort,
+                        line,
+                        start,
+                        stop - start,
+                        "expected newline or ';' after statement"
+                    )
+                );
+                return Stmt::Empty { span };
+            }
+        }
+    }
+
+    fn statement(&mut self) -> Stmt {
+        let token: Token = self.current().clone();
+        let (line, start, stop) = self.span();
+        let span = Span::new(line, start, stop);
+
+        match token.kind {
+            token::Kind::Newline => {
+                self.cursor += 1;
+                return self.statement();
+            },
+            token::Kind::Symbol => {
+                if self.peek().kind == token::Kind::Equal {
+                    let stmt = self.binding(token, false);
+                    return self.end_statement(stmt);
+                }
+                // Anything other than the above will fall through to the default case
+            }
+            token::Kind::Mut => {
+                let symbol = self.peek();
+                if symbol.kind != token::Kind::Symbol {
+                    self.cursor += 1;
+                    let (line, start, stop) = self.span();
+                    self.errors.push(
+                        CompilerError::new(
+                            errors::Kind::SyntaxError,
+                            errors::Flag::Abort,
+                            line,
+                            start,
+                            stop - start,
+                            "expected a symbol after 'mut'"
+                        )
+                    );
+                    return Stmt::Empty { span };
+                }
+                self.cursor += 1; // consume SYMBOL
+                if self.peek().kind == token::Kind::Equal {
+                    let stmt = self.binding(token, true);
+                    return self.end_statement(stmt);
+                }
+            }
+            _ => {}
+        }
+
+        let expression = self.assignment();
+        match expression {
+            Expr::Assignment { span, lhs: _, rhs: _ } => {
+                let stmt = Stmt::Expression { span, expr: expression };
+                return self.end_statement(stmt);
+            }
+            Expr::FunctionCall { span, callee: _, arguments: _ } => {
+                let stmt = Stmt::Expression { span, expr: expression };
+                return self.end_statement(stmt);
+            }
+            _ => {},
+        }
+
+        self.errors.push(
+            CompilerError::new(
+                errors::Kind::SyntaxError,
+                errors::Flag::Abort,
+                line,
+                start,
+                stop - start,
+                "expected a declaration, assignment, or function call"
+            )
+        );
+        return Stmt::Empty { span };
     }
 }

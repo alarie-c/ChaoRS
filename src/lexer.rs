@@ -101,6 +101,8 @@ impl Lexer {
                     }
                 }
 
+                '=' => self.token(token::Kind::Equal, start),
+
                 // Miscellaneous symbols
                 ',' => self.token(token::Kind::Comma, start),
 

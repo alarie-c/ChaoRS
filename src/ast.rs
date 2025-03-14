@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::token;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Span {
     pub line: usize,
     pub start: usize,
@@ -118,6 +118,10 @@ pub enum Expr {
 
 #[derive(Debug)]
 pub enum Stmt {
+    Empty {
+        span: Span
+    },
+
     Binding {
         span: Span,
         mutable: bool,
@@ -125,4 +129,9 @@ pub enum Stmt {
         initializer: Option<Box<Expr>>,
         annotation: Option<Box<Expr>>,
     },
+
+    Expression {
+        span: Span,
+        expr: Expr,
+    }
 }
