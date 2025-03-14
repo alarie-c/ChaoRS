@@ -1,8 +1,17 @@
+#[derive(Debug)]
 pub struct Span {
     pub start: usize,
     pub stop: usize,
+    pub valid: bool,
 }
 
+impl Span {
+    pub fn new(start: usize, stop: usize) -> Self {
+        Self { start, stop, valid: true }
+    }
+}
+
+#[derive(Debug)]
 pub enum AstOp {
     Plus,
     Minus,
@@ -12,7 +21,12 @@ pub enum AstOp {
     Reassign,
 }
 
+#[derive(Debug)]
 pub enum Expr {
+    Empty {
+        span: Span,
+    },
+
     // Literals
     Float {
         span: Span,
@@ -50,6 +64,7 @@ pub enum Expr {
     }
 }
 
+#[derive(Debug)]
 pub enum Stmt {
     Binding {
         span: Span,

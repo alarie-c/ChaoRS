@@ -1,11 +1,11 @@
-use crate::{errors::{self, CompilerError}, token::{self, Token}};
+use crate::{ errors::{ self, CompilerError }, token::{ self, Token } };
 
 pub struct Lexer {
+    pub output: Vec<Token>,
+    pub errors: Vec<CompilerError>,
     stream: Vec<char>,
-    output: Vec<Token>,
     cursor: usize,
     line: usize,
-    pub errors: Vec<CompilerError>,
 }
 
 impl Lexer {
@@ -19,12 +19,6 @@ impl Lexer {
         return self.stream.get(self.cursor + 1).unwrap_or(&'\0');
     }
 
-    /// Advances the lexer by 1 and returns the current character
-    // fn next(&mut self) -> &char {
-    //     self.cursor += 1;
-    //     self.current()
-    // }
-
     /// Takes a starting index and returns a `String` based on the stream from
     /// the starting index to the current cursor
     fn lexeme(&self, start: usize) -> String {
@@ -36,42 +30,37 @@ impl Lexer {
 
     fn token(&mut self, kind: token::Kind, start: usize) {
         self.output.push(Token {
-            kind: kind, 
+            kind: kind,
             offset: start,
             line: self.line,
-            lexeme: self.lexeme(start)
+            lexeme: self.lexeme(start),
         });
-    }
-
-    fn push_if_next_else(&mut self, assert_next: char, start:usize, tk_if: token::Kind, tk_else: token::Kind) {
-        if self.peek() == &assert_next {
-            self.cursor += 1;
-            self.token(tk_if, start);
-        } else {
-            self.token(tk_else, start);
-        }
     }
 }
 
 impl Lexer {
-    pub fn new() -> Self {
-        return Lexer {
+    pub fn new(string: &String) -> Self {
+        let mut l = Lexer {
             stream: vec![],
             output: vec![],
             cursor: 0usize,
             line: 1usize,
             errors: vec![],
-        }
+        };
+        l.load_string(string);
+        return l;
     }
 
     /// Clears the `stream` field of the lexer and reads in
     /// a new string as a `Vec<char>`
-    pub fn load_string(&mut self, string: &String) {
+    fn load_string(&mut self, string: &String) {
         self.stream.clear();
         self.stream = string.chars().collect();
     }
 
-    pub fn print_tokens(&self) { dbg!(&self.output); }
+    pub fn print_tokens(&self) {
+        dbg!(&self.output);
+    }
 
     pub fn scan(&mut self) {
         'scan: loop {
@@ -112,12 +101,12 @@ impl Lexer {
                         self.cursor += 1;
                     }
                     let lexeme = self.lexeme(start);
-                    
+
                     // Check if this keyword is a symbol
                     if let Some(kind) = token::Kind::get_keyword(&lexeme) {
                         // If so, push the keyword
                         self.output.push(Token {
-                            kind, 
+                            kind,
                             offset: start,
                             line: self.line,
                             lexeme,
@@ -129,8 +118,12 @@ impl Lexer {
                 }
                 '0'..='9' => {
                     let mut floating_point = false;
-                    while self.peek().is_ascii_digit() || self.peek() == &'_' || self.peek() == &'.' {
-                        floating_point = self.peek() == &'.' && !floating_point || floating_point;
+                    while
+                        self.peek().is_ascii_digit() ||
+                        self.peek() == &'_' ||
+                        self.peek() == &'.'
+                    {
+                        floating_point = (self.peek() == &'.' && !floating_point) || floating_point;
                         self.cursor += 1;
                     }
 
@@ -140,7 +133,7 @@ impl Lexer {
                         self.token(token::Kind::Integer, start);
                     }
                 }
-            
+
                 // EOF case
                 '\0' => {
                     self.token(token::Kind::End, start);
@@ -149,7 +142,16 @@ impl Lexer {
                 _ => {
                     println!("New Error");
                     println!("{} {}", self.cursor, self.current());
-                    self.errors.push(CompilerError::new(errors::Kind::SyntaxError, errors::Flag::Abort, self.line, self.cursor, 1, "Illegal character"));
+                    self.errors.push(
+                        CompilerError::new(
+                            errors::Kind::SyntaxError,
+                            errors::Flag::Abort,
+                            self.line,
+                            self.cursor,
+                            1,
+                            "illegal character"
+                        )
+                    );
                 }
             }
 

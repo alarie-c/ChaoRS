@@ -1,14 +1,15 @@
-use std::{fmt::Display, io::{stdout, Write}};
+use std::{ fmt::Display, io::{ stdout, Write } };
 
 const TERM_ESC: &'static str = "\x1b[";
-const TERMCOL_ERROR: &'static str =  "91m";
-const TERMCOL_MESSAGE: &'static str =  "92m";
-const TERMCOL_HIGHLIGHT: &'static str =  "93m";
-const TERM_RESET: &'static str =  "\x1b[m";
+const TERMCOL_ERROR: &'static str = "91m";
+const TERMCOL_MESSAGE: &'static str = "92m";
+const TERMCOL_HIGHLIGHT: &'static str = "93m";
+const TERM_RESET: &'static str = "\x1b[m";
 
 pub enum Kind {
     SyntaxError,
     UnterminatedLiteral,
+    ParseError,
 }
 
 impl Display for Kind {
@@ -16,6 +17,7 @@ impl Display for Kind {
         let error_name = match self {
             Kind::SyntaxError => "Syntax Error",
             Kind::UnterminatedLiteral => "Unterminated Literal",
+            Kind::ParseError => "Parse Error",
         };
         write!(f, "{TERM_ESC}{TERMCOL_HIGHLIGHT}{}{TERM_RESET}", error_name)
     }
@@ -38,7 +40,14 @@ pub struct CompilerError {
 }
 
 impl CompilerError {
-    pub fn new(kind: Kind, flag: Flag, line: usize, offset: usize, len: usize, message: &str) -> Self {
+    pub fn new(
+        kind: Kind,
+        flag: Flag,
+        line: usize,
+        offset: usize,
+        len: usize,
+        message: &str
+    ) -> Self {
         CompilerError {
             kind,
             flag,
@@ -80,34 +89,40 @@ impl CompilerError {
         }
 
         let line = source[ln_start..=ln_end].to_string();
-        
+
         // Get the whitespace for the underline amount
         let whitespace_len = self.offset - ln_start;
         let whitespace = " ".repeat(whitespace_len);
         let underline = "^".repeat(self.len);
 
         // [ERROR] ../path on line 0:
-        write!(stdout(), "\n{TERM_ESC}{TERMCOL_ERROR}[ERROR]{TERM_RESET} {} {} on line {}:\n",
+        write!(
+            stdout(),
+            "\n{TERM_ESC}{TERMCOL_ERROR}[ERROR]{TERM_RESET} {}:{} {}:\n",
             path,
-            self.kind,
-            self.line
+            self.line,
+            self.kind
         ).unwrap();
 
-        // ~ 
+        // ~
         // ~ line content
         // ~ ^^^^
-        write!(stdout(), "~\n~ {}\n~ {}{TERM_ESC}{TERMCOL_HIGHLIGHT}{}{TERM_RESET}\n",
+        write!(
+            stdout(),
+            "~\n~ {}\n~ {}{TERM_ESC}{TERMCOL_HIGHLIGHT}{}{TERM_RESET}\n",
             line,
             whitespace,
             underline
         ).unwrap();
 
         // message
-        write!(stdout(), "{TERM_ESC}{TERMCOL_MESSAGE}{}{TERM_RESET}\n",
+        write!(
+            stdout(),
+            "{TERM_ESC}{TERMCOL_MESSAGE}help:{TERM_RESET} {}\n",
             self.message
         ).unwrap();
 
         // Flush all of this to output
         stdout().flush().unwrap();
-    } 
+    }
 }

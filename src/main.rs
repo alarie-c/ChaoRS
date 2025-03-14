@@ -1,6 +1,7 @@
-use std::{fs, env};
+use std::{ env, fs, mem };
 
 use lexer::Lexer;
+use parser::Parser;
 
 mod token;
 mod lexer;
@@ -29,8 +30,7 @@ fn main() {
     println!("{file}");
 
     // Create lexer and load the source code
-    let mut lexer = Lexer::new();
-    lexer.load_string(&file);
+    let mut lexer = Lexer::new(&file);
     lexer.scan();
 
     lexer.print_tokens();
@@ -38,4 +38,8 @@ fn main() {
     for error in lexer.errors {
         error.print(&file, &path);
     }
+
+    let token_stream = mem::replace(&mut lexer.output, Vec::new());
+    let mut parser = Parser::new(token_stream);
+    parser.parse();
 }
