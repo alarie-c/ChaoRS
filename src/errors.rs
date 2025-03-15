@@ -10,6 +10,8 @@ pub enum Kind {
     SyntaxError,
     UnterminatedLiteral,
     ParseError,
+    NameError,
+    TypeError,
 }
 
 impl Display for Kind {
@@ -18,6 +20,8 @@ impl Display for Kind {
             Kind::SyntaxError => "Syntax Error",
             Kind::UnterminatedLiteral => "Unterminated Literal",
             Kind::ParseError => "Parse Error",
+            Kind::NameError => "Name Error",
+            Kind::TypeError => "Type Error",
         };
         write!(f, "{TERM_ESC}{TERMCOL_HIGHLIGHT}{}{TERM_RESET}", error_name)
     }
@@ -122,7 +126,7 @@ impl CompilerError {
         // message
         write!(
             stdout(),
-            "{TERM_ESC}{TERMCOL_MESSAGE}help:{TERM_RESET} {}\n",
+            "{TERM_ESC}{TERMCOL_MESSAGE}help:{TERM_RESET} {}\n\n",
             self.message
         ).unwrap();
 

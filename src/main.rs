@@ -1,5 +1,6 @@
 use std::{ env, fs, mem };
 
+use analysis::name_resolution::Resolver;
 use ast::Stmt;
 use ir::compiler::Compiler;
 use lexer::Lexer;
@@ -57,6 +58,13 @@ fn main() {
 
     let mut ast: Vec<Stmt> = vec![];
     mem::swap(&mut ast, &mut parser.tree);
+
+    let mut resolver = Resolver::new();
+    resolver.resolve_names(&ast);
+
+    for error in resolver.errors {
+        error.print(&file, &path);
+    }
 
     let mut compiler = Compiler::new(ast);
     compiler.compile();
