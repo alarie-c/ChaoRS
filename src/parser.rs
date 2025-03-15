@@ -1,4 +1,8 @@
-use crate::{ ast::{ AstOp, Expr, Span, Stmt }, errors::{ self, CompilerError }, token::{ self, Token } };
+use crate::{
+    ast::{ AstOp, Expr, Span, Stmt },
+    errors::{ self, CompilerError },
+    token::{ self, Token },
+};
 
 pub struct Parser {
     stream: Vec<Token>,
@@ -80,13 +84,11 @@ impl Parser {
 
     /// Basic binary expression post-fixup:
     /// If RHS is a binary expression and the operator of that expression is less than the original operator, then swap the operators and swap the original LHS with the LHS of the other expression
-    /// 
+    ///
     /// `5 * 3 + 10` becomes `10 + 3 * 5`
     fn binary_post_fixup(mut expression: Expr) -> Expr {
-        println!("Original: {:#?}", expression);
-        
         match expression {
-            Expr::Binary { span: _, ref mut lhs,  ref mut rhs, ref mut op } => {
+            Expr::Binary { span: _, ref mut lhs, ref mut rhs, ref mut op } => {
                 match **rhs {
                     Expr::Binary { span: _, lhs: _, rhs: ref mut rhs_rhs, op: ref mut rhs_op } => {
                         if rhs_op.precedence() < op.precedence() {
@@ -102,7 +104,7 @@ impl Parser {
             _ => {}
         }
         return expression;
-    }   
+    }
 }
 
 impl Parser {
@@ -226,8 +228,10 @@ impl Parser {
         let mut expression = self.function_call();
 
         while let Some(op) = AstOp::from_token(&self.peek().kind) {
-            if op.precedence() != 0 { break; }
-            
+            if op.precedence() != 0 {
+                break;
+            }
+
             self.cursor += 1;
             let (line, start, stop) = self.span();
             let span = Span::new(line, start, stop);
@@ -245,8 +249,10 @@ impl Parser {
         let mut expression = self.term();
 
         while let Some(op) = AstOp::from_token(&self.peek().kind) {
-            if op.precedence() != 1 { break; }
-            
+            if op.precedence() != 1 {
+                break;
+            }
+
             self.cursor += 1;
             let (line, start, stop) = self.span();
             let span = Span::new(line, start, stop);
@@ -283,7 +289,7 @@ impl Parser {
             if self.current().kind == token::Kind::End {
                 break 'statements;
             }
-            
+
             let statement = self.statement();
             self.tree.push(statement);
             self.cursor += 1;
@@ -299,7 +305,13 @@ impl Parser {
 
         self.cursor += 1;
         let value = self.assignment();
-        return Stmt::Binding { span, mutable, name: token.lexeme, initializer: Some(Box::new(value)), annotation: None };
+        return Stmt::Binding {
+            span,
+            mutable,
+            name: token.lexeme,
+            initializer: Some(Box::new(value)),
+            annotation: None,
+        };
     }
 
     fn end_statement(&mut self, statement: Stmt) -> Stmt {
@@ -332,7 +344,7 @@ impl Parser {
             token::Kind::Newline => {
                 self.cursor += 1;
                 return self.statement();
-            },
+            }
             token::Kind::Symbol => {
                 if self.peek().kind == token::Kind::Equal {
                     let stmt = self.binding(token, false);
@@ -376,7 +388,7 @@ impl Parser {
                 let stmt = Stmt::Expression { span, expr: expression };
                 return self.end_statement(stmt);
             }
-            _ => {},
+            _ => {}
         }
 
         self.errors.push(

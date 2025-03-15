@@ -8,6 +8,7 @@ mod lexer;
 mod ast;
 mod errors;
 mod parser;
+mod assembler;
 
 const FILE_PATH: &'static str = "main.chao";
 
