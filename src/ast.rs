@@ -35,7 +35,7 @@ impl AstOp {
             token::Kind::Slash => Some(AstOp::Divide),
             token::Kind::Modulo => Some(AstOp::Modulus),
             token::Kind::Arrow => Some(AstOp::Reassign),
-            _ => None
+            _ => None,
         }
     }
 
@@ -77,7 +77,7 @@ pub enum Expr {
     },
     Integer {
         span: Span,
-        value: i64,
+        value: i32,
     },
     String {
         span: Span,
@@ -116,10 +116,22 @@ pub enum Expr {
     },
 }
 
+impl Expr {
+    pub fn is_terminal(&self) -> bool {
+        match self {
+            | Expr::Integer { span: _, value: _ }
+            | Expr::Float { span: _, value: _ }
+            | Expr::String { span: _, value: _ }
+            | Expr::Symbol { span: _, name: _ } => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum Stmt {
     Empty {
-        span: Span
+        span: Span,
     },
 
     Binding {
@@ -133,5 +145,5 @@ pub enum Stmt {
     Expression {
         span: Span,
         expr: Expr,
-    }
+    },
 }

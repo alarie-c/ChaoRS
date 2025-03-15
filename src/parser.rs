@@ -6,7 +6,7 @@ use crate::{
 
 pub struct Parser {
     stream: Vec<Token>,
-    tree: Vec<Stmt>,
+    pub tree: Vec<Stmt>,
     cursor: usize,
     pub errors: Vec<CompilerError>,
 }
@@ -127,7 +127,7 @@ impl Parser {
                 return Expr::Symbol { span, name };
             }
             token::Kind::Integer => {
-                let value: i64 = token.lexeme.parse().unwrap_or_else(|_| {
+                let value: i32 = token.lexeme.parse().unwrap_or_else(|_| {
                     self.errors.push(
                         CompilerError::new(
                             errors::Kind::ParseError,
@@ -138,7 +138,7 @@ impl Parser {
                             "there was a compiler error parsing this integer literal."
                         )
                     );
-                    return 0i64;
+                    return 0i32;
                 });
                 return Expr::Integer { span, value };
             }
@@ -294,8 +294,6 @@ impl Parser {
             self.tree.push(statement);
             self.cursor += 1;
         }
-
-        println!("{:#?}", self.tree);
     }
 
     fn binding(&mut self, token: Token, mutable: bool) -> Stmt {

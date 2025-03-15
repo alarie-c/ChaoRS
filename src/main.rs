@@ -1,5 +1,7 @@
 use std::{ env, fs, mem };
 
+use ast::Stmt;
+use ir::compiler::Compiler;
 use lexer::Lexer;
 use parser::Parser;
 
@@ -9,6 +11,8 @@ mod ast;
 mod errors;
 mod parser;
 mod assembler;
+mod ir;
+mod analysis;
 
 const FILE_PATH: &'static str = "main.chao";
 
@@ -50,4 +54,10 @@ fn main() {
     for error in parser.errors {
         error.print(&file, &path);
     }
+
+    let mut ast: Vec<Stmt> = vec![];
+    mem::swap(&mut ast, &mut parser.tree);
+
+    let mut compiler = Compiler::new(ast);
+    compiler.compile();
 }
